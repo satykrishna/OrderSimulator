@@ -1,0 +1,24 @@
+[
+  {
+    "id": "a8cfcb76-7f24-4420-a5ba-d46dd77bdffd",
+    "name": "Banana Split",
+    "temp": "frozen",
+    "shelfLife": 20,
+    "decayRate": 0.63
+  },
+  {
+    "id": "2ec069e3-576f-48eb-869f-74a540ef840c",
+    "name": "Acai Bowl",
+    "temp": "cold",
+    "shelfLife": 249,
+    "decayRate": 0.3
+  },
+  {
+    "id": "74e0893f-8544-4298-b507-9cf5ab847d83",
+    "name": "Pad See Ew",
+    "temp": "hot",
+    "shelfLife": 210,
+    "decayRate": 0.72
+  }
+ 
+]
