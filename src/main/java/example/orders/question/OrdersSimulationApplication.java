@@ -89,6 +89,8 @@ public class OrdersSimulationApplication implements CommandLineRunner {
 		dispatcherService.showStatsforfrozeShelf();
 		
 		dispatcherService.showStatsforAnyTempShelf();
+		
+		dispatcherService.closeNotification();
 	}
 		
 

@@ -2,6 +2,8 @@ package example.orders.question.shelf;
 
 import static java.util.stream.Collectors.toList;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -287,7 +289,7 @@ public class ShelfDispatcherService implements ShelfConstants {
 			
 			coldShelf.forEach(order-> order.setCurrentShelfLife(shelfLifeService.getOrderValue(false, order)));
 
-			log.info("Current COLD SHELF ITEMS : {} ", coldShelf);
+			log.info("Time: {}, Current COLD SHELF ITEMS : {} ", LocalDateTime.now(), coldShelf);
 		}
 	}
 	
@@ -300,7 +302,7 @@ public class ShelfDispatcherService implements ShelfConstants {
 			
 			coldShelf.forEach(order-> order.setCurrentShelfLife(shelfLifeService.getOrderValue(false, order)));
 
-			log.info("Current FROZE SHELF ITEMS : {} ", frozenShelf);
+			log.info("Time: {}, Current FROZE SHELF ITEMS : {} ", LocalDateTime.now(), frozenShelf);
 		}
 	}
 	
@@ -313,10 +315,44 @@ public class ShelfDispatcherService implements ShelfConstants {
 			
 			coldShelf.forEach(order-> order.setCurrentShelfLife(shelfLifeService.getOrderValue(true, order)));
 
-			log.info("Current ANY TEMP SHELF ITEMS : {} ", anyTemperatureShelf);
+			log.info(" Time:{}, Current ANY TEMP SHELF ITEMS : {} ", LocalDateTime.now(), anyTemperatureShelf);
 		}
 	}
-	public static void sleep() {
+
+	@Async
+	public void closeNotification() {
+		
+		boolean isCompleted = false;
+		
+		while(!isCompleted) {
+			
+			if(!ordersQueue.isEmpty()) {
+				continue;
+			}
+			
+			if(!coldShelf.isEmpty()) {
+				continue;
+			}
+			
+			if(!hotShelf.isEmpty()) {
+				continue;
+			}
+			
+			if(!anyTemperatureShelf.isEmpty()) {
+				continue;
+			}
+			
+			if(!frozenShelf.isEmpty()) {
+				continue;
+			}
+			
+			isCompleted = true;
+		}
+		
+		log.info("ALL ORDERS ARE SERVED FROM [KITCHEN] TO [SHELF] and FROM [SHELF] TO [COURIER] AND FROM [COURIER] TO [CUSTOMER] WITH IN GIVEN TIME.. !!! GOOD BYE");
+	}
+	
+	public  void sleep() {
 		
 		try {
 			TimeUnit.SECONDS.sleep(50);
