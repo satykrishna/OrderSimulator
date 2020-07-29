@@ -270,12 +270,17 @@ public class ShelfDispatcherService implements ShelfConstants {
 	}
 	
 	@AllArgsConstructor
-	@ToString
 	class OrderDisplay {
 		
 		Order order;
 		
 		double shelfLifeValue;
+		
+		@Override
+		public String toString() {
+			// TODO Auto-generated method stub
+			return "[order: " + order + " Shelf Life : " + shelfLifeValue+ "]";
+		}
 	}
 	
 	@Async
