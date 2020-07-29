@@ -2,8 +2,6 @@ package example.orders.question.shelf;
 
 import static java.util.stream.Collectors.toList;
 
-import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -23,11 +21,14 @@ import example.orders.question.model.Order;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
-@Service(value = "dispatcherService")
+@Service
 @Data
 @Slf4j
-public class ShelfDispatcherService {
+public class ShelfDispatcherService implements ShelfConstants {
 
+	@Autowired
+	private ShelfLifeService shelfLifeService;
+	
 	@Autowired
 	@Qualifier("hotShelf")
 	private BlockingQueue<Order> hotShelf;
@@ -54,47 +55,20 @@ public class ShelfDispatcherService {
 	@Qualifier("ordersQueue")
 	private BlockingQueue<Order> ordersQueue;
 
-	public final static double EPSILON = 0.1;
-
-	public final static int COURIER_MIN_DELAY_SEC = 2;
-
-	public final static int COURIER_MAX_DELAY_SEC = 6;
-
-	public double getOrderValue(boolean isAnyTempShelf, Order order) {
-
-		LocalDateTime now = LocalDateTime.now();
-
-		long orderAge = order.getOrderReceivedTime().until(now, ChronoUnit.SECONDS);
-
-		double decayRate = order.getDecayRate();
-
-		int shelfLife = order.getShelfLife();
-
-		int shelfDecayModifier = isAnyTempShelf ? 2 : 1;
-
-		double val = (shelfLife - decayRate * orderAge * shelfDecayModifier) / shelfDecayModifier;
-
-		return val;
-	}
-
-	public boolean isShelfLifeValid(boolean isAnyTempShelf, Order order) {
-		return getOrderValue(isAnyTempShelf, order) > EPSILON;
-	}
-
 	@Async
 	public void dispatchHotOrders() {
 
-		log.info(
+		log.debug(
 				"--- DISPATCH HOT ITEMS AS LONG AS THERE ARE SOME ORDERS FROM KITCHEN TO SHELF AND HOTSHELF IS NOT EMPTY----");
 
 		while (!ordersQueue.isEmpty() || !hotShelf.isEmpty()) {
 
-			List<Order> validOrders = hotShelf.stream().filter(order -> this.isShelfLifeValid(false, order))
+			List<Order> validOrders = hotShelf.stream().filter(order -> shelfLifeService.isShelfLifeValid(false, order))
 					.collect(toList());
 
 			if (validOrders.size() > 0) {
 
-				log.info("VALID HOT ORDERS FOR DISPATCH TO COURIER SERVICE: {}", validOrders);
+				log.debug("VALID HOT ORDERS FOR DISPATCH TO COURIER SERVICE: {}", validOrders);
 
 			}
 
@@ -105,35 +79,35 @@ public class ShelfDispatcherService {
 
 			hotShelf.removeIf(validOrders::contains);
 
-			List<Order> inValidOrders = hotShelf.stream().filter(order -> !this.isShelfLifeValid(false, order))
+			List<Order> inValidOrders = hotShelf.stream().filter(order -> !shelfLifeService.isShelfLifeValid(false, order))
 					.collect(toList());
 
 			hotShelf.removeIf(inValidOrders::contains);
 
 			if (inValidOrders.size() > 0) {
 
-				log.info("DISPOSED INVALID HOT ORDERS FOR DISPOSAL: {}, NOW HOT_SHELF: {}", inValidOrders, hotShelf);
+				log.debug("DISPOSED INVALID HOT ORDERS FOR DISPOSAL: {}, NOW HOT_SHELF: {}", inValidOrders, hotShelf);
 
 			}
 		}
 
-		log.info("--- ALL HOT ITEMS ARE EMPTY. GOOD BYE HOT-SHELF----");
+		log.debug("--- ALL HOT ITEMS ARE EMPTY. GOOD BYE HOT-SHELF----");
 
 	}
 
 	@Async
 	public void dispatchColdOrders() {
 
-		log.info(
+		log.debug(
 				"--- DISPATCH COLD ITEMS AS LONG AS THERE ARE SOME ORDERS FROM KITCHEN TO SHELF AND COLD SHELF IS NOT EMPTY----");
 
 		while (!ordersQueue.isEmpty() || !coldShelf.isEmpty()) {
 
-			List<Order> validOrders = coldShelf.stream().filter(order -> this.isShelfLifeValid(false, order))
+			List<Order> validOrders = coldShelf.stream().filter(order -> shelfLifeService.isShelfLifeValid(false, order))
 					.collect(toList());
 
 			if (validOrders.size() > 0) {
-				log.info("VALID COLD ORDERS FOR DISPATCH TO COURIER SERVICE: {}", validOrders);
+				log.debug("VALID COLD ORDERS FOR DISPATCH TO COURIER SERVICE: {}", validOrders);
 			}
 
 			List<OrderEvent> events = validOrders.stream().map(order -> new OnColdOrderEvent(order, true))
@@ -143,35 +117,35 @@ public class ShelfDispatcherService {
 
 			coldShelf.removeIf(validOrders::contains);
 
-			List<Order> inValidOrders = coldShelf.stream().filter(order -> !this.isShelfLifeValid(false, order))
+			List<Order> inValidOrders = coldShelf.stream().filter(order -> !shelfLifeService.isShelfLifeValid(false, order))
 					.collect(toList());
 
 			coldShelf.removeIf(inValidOrders::contains);
 
 			if (inValidOrders.size() > 0) {
-				log.info("DISPOSED INVALID COLD ORDERS FOR DISPOSAL DUE TO AGED ORDERS: {}, NOW COLD_SHELF: {}",
+				log.debug("DISPOSED INVALID COLD ORDERS FOR DISPOSAL DUE TO AGED ORDERS: {}, NOW COLD_SHELF: {}",
 						inValidOrders, coldShelf);
 			}
 
 		}
 
-		log.info("--- ALL COLD ITEMS ARE EMPTY. GOOD BYE COLD-SHELF----");
+		log.debug("--- ALL COLD ITEMS ARE EMPTY. GOOD BYE COLD-SHELF----");
 
 	}
 
 	@Async
 	public void dispatchFrozeOrders() {
 
-		log.info(
+		log.debug(
 				"--- DISPATCH FROZE ITEMS AS LONG AS THERE ARE SOME ORDERS FROM KITCHEN TO SHELF AND FROZE SHELF IS NOT EMPTY----");
 
 		while (!ordersQueue.isEmpty() || !frozenShelf.isEmpty()) {
 
-			List<Order> validOrders = frozenShelf.stream().filter(order -> this.isShelfLifeValid(false, order))
+			List<Order> validOrders = frozenShelf.stream().filter(order -> shelfLifeService.isShelfLifeValid(false, order))
 					.collect(toList());
 
 			if (validOrders.size() > 0) {
-				log.info("VALID FROZEN ORDERS FOR DISPATCH TO COURIER SERVICE: {}", validOrders);
+				log.debug("VALID FROZEN ORDERS FOR DISPATCH TO COURIER SERVICE: {}", validOrders);
 			}
 
 			List<OrderEvent> events = validOrders.stream().map(order -> new OnFreezeOrderReadyEvent(order, true))
@@ -181,19 +155,19 @@ public class ShelfDispatcherService {
 
 			frozenShelf.removeIf(validOrders::contains);
 
-			List<Order> inValidOrders = frozenShelf.stream().filter(order -> !this.isShelfLifeValid(false, order))
+			List<Order> inValidOrders = frozenShelf.stream().filter(order -> !shelfLifeService.isShelfLifeValid(false, order))
 					.collect(toList());
 
 			frozenShelf.removeIf(inValidOrders::contains);
 
 			if (inValidOrders.size() > 0) {
-				log.info("DISPOSED INVALID FROZEN ORDERS FOR DISPOSAL: {}, NOW FROZEN_SHELF: {}", inValidOrders,
+				log.debug("DISPOSED INVALID FROZEN ORDERS FOR DISPOSAL: {}, NOW FROZEN_SHELF: {}", inValidOrders,
 						frozenShelf);
 			}
 
 		}
 
-		log.info("--- ALL FROZE ITEMS ARE EMPTY. GOOD BYE FROZE-SHELF----");
+		log.debug("--- ALL FROZE ITEMS ARE EMPTY. GOOD BYE FROZE-SHELF----");
 
 	}
 
@@ -202,13 +176,13 @@ public class ShelfDispatcherService {
 
 		while (!ordersQueue.isEmpty() || !hotShelf.isEmpty()) {
 
-			List<Order> inValidOrders = hotShelf.stream().filter(order -> !this.isShelfLifeValid(false, order))
+			List<Order> inValidOrders = hotShelf.stream().filter(order -> !shelfLifeService.isShelfLifeValid(false, order))
 					.collect(toList());
 
 			if (inValidOrders.size() > 0) {
-				log.info("--- COLLECTED OUTDATED ORDERS FROM HOT SHELF {} ----", inValidOrders);
+				log.debug("--- COLLECTED OUTDATED ORDERS FROM HOT SHELF {} ----", inValidOrders);
 				hotShelf.removeIf(inValidOrders::contains);
-				log.info("--- AFTER REMOVING OUTDATED ORDERS FROM HOT SHELF  {} ----", hotShelf);
+				log.debug("--- AFTER REMOVING OUTDATED ORDERS FROM HOT SHELF  {} ----", hotShelf);
 			}
 
 		}
@@ -219,16 +193,16 @@ public class ShelfDispatcherService {
 
 		while (!ordersQueue.isEmpty() || !coldShelf.isEmpty()) {
 
-			List<Order> inValidOrders = coldShelf.stream().filter(order -> !this.isShelfLifeValid(false, order))
+			List<Order> inValidOrders = coldShelf.stream().filter(order -> !shelfLifeService.isShelfLifeValid(false, order))
 					.collect(toList());
 
 			coldShelf.removeIf(inValidOrders::contains);
 
 			if (inValidOrders.size() > 0) {
 
-				log.info("--- COLLECTED OUTDATED ORDERS FROM COLD SHELF {} ----", inValidOrders);
+				log.debug("--- COLLECTED OUTDATED ORDERS FROM COLD SHELF {} ----", inValidOrders);
 
-				log.info("--- AFTER REMOVING OUTDATED ORDERS FROM COLD SHELF {} ----", coldShelf);
+				log.debug("--- AFTER REMOVING OUTDATED ORDERS FROM COLD SHELF {} ----", coldShelf);
 
 			}
 		}
@@ -239,16 +213,16 @@ public class ShelfDispatcherService {
 
 		while (!ordersQueue.isEmpty() || !frozenShelf.isEmpty()) {
 
-			List<Order> inValidOrders = frozenShelf.stream().filter(order -> !this.isShelfLifeValid(false, order))
+			List<Order> inValidOrders = frozenShelf.stream().filter(order -> !shelfLifeService.isShelfLifeValid(false, order))
 					.collect(toList());
 
 			frozenShelf.removeIf(inValidOrders::contains);
 
 			if (inValidOrders.size() > 0) {
 
-				log.info("--- COLLECTED OUTDATED ORDERS FROM FROZE SHELF {} ----", inValidOrders);
+				log.debug("--- COLLECTED OUTDATED ORDERS FROM FROZE SHELF {} ----", inValidOrders);
 
-				log.info("--- AFTER REMOVING OUTDATED ORDERS FROM FREEZE SHELF {} ----", frozenShelf);
+				log.debug("--- AFTER REMOVING OUTDATED ORDERS FROM FREEZE SHELF {} ----", frozenShelf);
 
 			}
 		}
@@ -260,16 +234,16 @@ public class ShelfDispatcherService {
 		while (!ordersQueue.isEmpty() || !anyTemperatureShelf.isEmpty()) {
 
 			List<Order> inValidOrders = anyTemperatureShelf.stream()
-					.filter(order -> !this.isShelfLifeValid(true, order)).collect(toList());
+					.filter(order -> !shelfLifeService.isShelfLifeValid(true, order)).collect(toList());
 
 			
 			anyTemperatureShelf.removeIf(inValidOrders::contains);
 			
 			if (inValidOrders.size() > 0) {
 
-				log.info("--- COLLECTED OUTDATED ORDERS FROM ANY_TEMP SHELF {} ----", inValidOrders);
+				log.debug("--- COLLECTED OUTDATED ORDERS FROM ANY_TEMP SHELF {} ----", inValidOrders);
 
-				log.info("--- AFTER REMOVING OUTDATED ORDERS FROM ANY_TEMP SHELF {} ----", anyTemperatureShelf);
+				log.debug("--- AFTER REMOVING OUTDATED ORDERS FROM ANY_TEMP SHELF {} ----", anyTemperatureShelf);
 			}
 
 		}
@@ -287,7 +261,66 @@ public class ShelfDispatcherService {
 
 		orderDispatcher.publishEvent(event);
 
-		log.info("Order:{}, courierDelayInterval: {}, published event", event.getOrder(), courierDelayInterval);
+		log.debug("Order:{}, courierDelayInterval: {}, published event", event.getOrder(), courierDelayInterval);
 
 	}
-}
+	
+	@Async
+	public void showStatsforHotShelf() {
+		
+		while(!ordersQueue.isEmpty() || !hotShelf.isEmpty()) {
+
+			sleep();
+			
+			hotShelf.forEach(order-> order.setCurrentShelfLife(shelfLifeService.getOrderValue(false, order)));
+
+			log.info("Current HOT SHELF ITEMS : {} ", hotShelf);
+		}
+	}
+	
+	@Async
+	public void showStatsforColdShelf() {
+		
+		while(!ordersQueue.isEmpty() || !coldShelf.isEmpty()) {
+
+			sleep();
+			
+			coldShelf.forEach(order-> order.setCurrentShelfLife(shelfLifeService.getOrderValue(false, order)));
+
+			log.info("Current COLD SHELF ITEMS : {} ", coldShelf);
+		}
+	}
+	
+	@Async
+	public void showStatsforfrozeShelf() {
+		
+		while(!ordersQueue.isEmpty() || !frozenShelf.isEmpty()) {
+
+			sleep();
+			
+			coldShelf.forEach(order-> order.setCurrentShelfLife(shelfLifeService.getOrderValue(false, order)));
+
+			log.info("Current FROZE SHELF ITEMS : {} ", frozenShelf);
+		}
+	}
+	
+	@Async
+	public void showStatsforAnyTempShelf() {
+		
+		while(!ordersQueue.isEmpty() || !anyTemperatureShelf.isEmpty()) {
+
+			sleep();
+			
+			coldShelf.forEach(order-> order.setCurrentShelfLife(shelfLifeService.getOrderValue(true, order)));
+
+			log.info("Current ANY TEMP SHELF ITEMS : {} ", anyTemperatureShelf);
+		}
+	}
+	public static void sleep() {
+		
+		try {
+			TimeUnit.SECONDS.sleep(50);
+		} catch (InterruptedException e) {
+		}
+	}
+ }

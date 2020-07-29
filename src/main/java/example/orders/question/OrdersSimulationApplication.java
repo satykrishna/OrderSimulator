@@ -55,7 +55,9 @@ public class OrdersSimulationApplication implements CommandLineRunner {
 	
 	@Override
 	public void run(String... args) throws Exception {
+		
 		orders =   mapper.readValue(loadOrdersFile(), new TypeReference<ArrayList<Order>>() {});
+		
 		ordersQueue.addAll(orders);
 		
 		initializeCourierService();
@@ -79,6 +81,14 @@ public class OrdersSimulationApplication implements CommandLineRunner {
 		dispatcherService.removeOutdatedFrozenOrders();
 		
 		dispatcherService.removeOutdatedHotOrders();
+		
+		dispatcherService.showStatsforfrozeShelf();
+		
+		dispatcherService.showStatsforColdShelf();
+		
+		dispatcherService.showStatsforfrozeShelf();
+		
+		dispatcherService.showStatsforAnyTempShelf();
 	}
 		
 

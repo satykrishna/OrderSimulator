@@ -12,6 +12,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import example.orders.question.model.Order;
+import example.orders.question.shelf.ShelfLifeService;
 import example.orders.question.shelf.ShelfStorageService;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -35,12 +36,8 @@ public class KitchenService {
 
 	public void getOrdersToKitchen() {
 		
-		while(true) {
-			if(ordersQueue.isEmpty()) {
-				log.info("[{}] - All Orders are Serviced !!! About to Take Rest..!!!", SERVICE_NAME);
-				break;
-			}
-			
+		while(!ordersQueue.isEmpty()) {
+
 			int index = 0;
 
 			LocalDateTime  currentTime = LocalDateTime.now();

@@ -1,7 +1,5 @@
 package example.orders.question.shelf;
 
-import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 
@@ -14,25 +12,15 @@ import example.orders.question.model.Temperature;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
-@Service
+@Service(value = "shelfStorage")
 @Slf4j
 @Data
-public class ShelfStorageService {
+public class ShelfStorageService implements ShelfConstants {
 
-	public final static int HOT_SHELF_SIZE = 10;
 
-	public final static int COLD_SHELF_SIZE = 10;
-
-	public final static int FREEZE_SHELF_SIZE = 10;
-
-	public final static int ANY_TEMP_SHELF_SIZE = 15;
-
-	public final static double EPSILON = 0.1;
-
-	public final static int COURIER_MIN_DELAY_SEC = 2;
-
-	public final static int COURIER_MAX_DELAY_SEC = 6;
-
+	@Autowired
+	private ShelfLifeService lifeService;
+	
 	@Autowired
 	@Qualifier("hotShelf")
 	private BlockingQueue<Order> hotShelf;
@@ -128,7 +116,7 @@ public class ShelfStorageService {
 
 			// Either remove randomly or calculate the value of the order and remove it.
 
-			Optional<Order> aged = anyTemperatureShelf.stream().filter(o -> getOrderValue(true, o) < EPSILON).findAny();
+			Optional<Order> aged = anyTemperatureShelf.stream().filter(o -> lifeService.getOrderValue(true, o) < EPSILON).findAny();
 
 			if (aged.isPresent()) {
 				anyTemperatureShelf.remove(aged.get());
@@ -148,28 +136,6 @@ public class ShelfStorageService {
 
 		}
 	}
-
-	public double getOrderValue(boolean isAnyTempShelf, Order order) {
-
-		LocalDateTime now = LocalDateTime.now();
-
-		long orderAge = order.getOrderReceivedTime().until(now, ChronoUnit.SECONDS);
-
-		double decayRate = order.getDecayRate();
-
-		int shelfLife = order.getShelfLife();
-
-		int shelfDecayModifier = isAnyTempShelf ? 2 : 1;
-
-		double val = (shelfLife - decayRate * orderAge * shelfDecayModifier) / shelfDecayModifier;
-
-		return val;
-	}
-
-	public boolean isShelfLifeValid(boolean isAnyTempShelf, Order order) {
-		return getOrderValue(isAnyTempShelf, order) > EPSILON;
-	}
-
 
 	private void addFrozenOrder(Order order) {
 

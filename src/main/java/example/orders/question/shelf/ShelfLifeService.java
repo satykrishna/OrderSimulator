@@ -3,12 +3,15 @@ package example.orders.question.shelf;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 
+import org.springframework.stereotype.Service;
+
 import example.orders.question.model.Order;
 
-public interface ShelfService extends ShelfConstants{
+@Service
+public class ShelfLifeService implements ShelfConstants{
 
 	
-	public default double getOrderValue(boolean isAnyTempShelf, Order order) {
+	public double getOrderValue(boolean isAnyTempShelf, Order order) {
 		
 		LocalDateTime now = LocalDateTime.now();
 		
@@ -25,7 +28,7 @@ public interface ShelfService extends ShelfConstants{
 		return val;
 	}
 
-	public default boolean isShelfLifeValid(boolean isAnyTempShelf, Order order) {
+	public boolean isShelfLifeValid(boolean isAnyTempShelf, Order order) {
 		return getOrderValue(isAnyTempShelf, order) > EPSILON;
 	}
 }

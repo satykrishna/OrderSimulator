@@ -30,15 +30,23 @@ public class Order {
 
 	private String id;
 	
+	@ToString.Exclude
 	private String name;
 	
+	@ToString.Exclude
 	private Temperature temp;
-	
+
+	@ToString.Exclude
 	private int shelfLife;
 	
+	@ToString.Exclude
 	private double decayRate;
 	
+	@ToString.Exclude
 	private LocalDateTime orderReceivedTime;
+	
+	@ToString.Exclude
+	private double currentShelfLife;
 	
 	
 }
