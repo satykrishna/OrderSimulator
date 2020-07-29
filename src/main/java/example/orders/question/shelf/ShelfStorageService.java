@@ -128,10 +128,11 @@ public class ShelfStorageService implements ShelfConstants {
 			}
 
 			else {
+                Order removed = anyTemperatureShelf.poll();
 				anyTemperatureShelf.add(order);
 				log.info(
 						"DIDN'T FIND ANY AGED ORDER IN ANY_TEMP_SHELF, REMOVE THE FIRST ONE IN QUEUE: {}, [ANY TEMPERATURE SHELF] ADDED order {}",
-						anyTemperatureShelf.poll(), order);
+					    removed, order);
 			}
 
 		}

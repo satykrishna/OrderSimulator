@@ -1,5 +1,7 @@
 package example.orders.question.courier;
 
+import java.time.LocalDateTime;
+
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
@@ -13,8 +15,7 @@ public class HotOrderCourierServiceListener implements CourierServiceListener {
 	@EventListener(condition = "#event.isReadyToBeDelivered and #event.isHotShelfOrder")
 	public void onReceivingOrder(OrderEvent event) {
 
-		log.info("Received The Order.. Prepare For Delivery  {}", event.getOrder());
+		log.info("[HOT-ORDER-DELIVERED] DELIVERY TIME {} - {}", LocalDateTime.now(), event.getOrder());
 
-		log.info("Delivered The Order {}", event.getOrder());
 	}
 }

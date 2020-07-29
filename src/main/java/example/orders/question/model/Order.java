@@ -45,8 +45,6 @@ public class Order {
 	@ToString.Exclude
 	private LocalDateTime orderReceivedTime;
 	
-	@ToString.Exclude
-	private double currentShelfLife;
 	
 	
 }

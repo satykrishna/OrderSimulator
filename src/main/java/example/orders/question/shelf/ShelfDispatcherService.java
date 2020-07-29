@@ -20,7 +20,9 @@ import example.orders.question.courier.event.OnHotOrderReadyEvent;
 import example.orders.question.courier.event.OrderEvent;
 import example.orders.question.kitchen.KitchenService;
 import example.orders.question.model.Order;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 
 @Service
@@ -267,6 +269,15 @@ public class ShelfDispatcherService implements ShelfConstants {
 
 	}
 	
+	@AllArgsConstructor
+	@ToString
+	class OrderDisplay {
+		
+		Order order;
+		
+		double shelfLifeValue;
+	}
+	
 	@Async
 	public void showStatsforHotShelf() {
 		
@@ -274,9 +285,9 @@ public class ShelfDispatcherService implements ShelfConstants {
 
 			sleep();
 			
-			hotShelf.forEach(order-> order.setCurrentShelfLife(shelfLifeService.getOrderValue(false, order)));
-
-			log.info("Current HOT SHELF ITEMS : {} ", hotShelf);
+			List<OrderDisplay> hotShelfStatsList = hotShelf.stream().map(order-> new OrderDisplay(order, shelfLifeService.getOrderValue(false, order))).collect(toList());
+			
+			log.info("Current HOT SHELF ITEMS : {} ", hotShelfStatsList);
 		}
 	}
 	
@@ -287,9 +298,9 @@ public class ShelfDispatcherService implements ShelfConstants {
 
 			sleep();
 			
-			coldShelf.forEach(order-> order.setCurrentShelfLife(shelfLifeService.getOrderValue(false, order)));
+			List<OrderDisplay> stats = coldShelf.stream().map(order-> new OrderDisplay(order, shelfLifeService.getOrderValue(false, order))).collect(toList());
 
-			log.info("Time: {}, Current COLD SHELF ITEMS : {} ", LocalDateTime.now(), coldShelf);
+			log.info("[STATS_TIME]: {}, Current COLD SHELF ITEMS : {} ", LocalDateTime.now(), stats);
 		}
 	}
 	
@@ -300,9 +311,9 @@ public class ShelfDispatcherService implements ShelfConstants {
 
 			sleep();
 			
-			coldShelf.forEach(order-> order.setCurrentShelfLife(shelfLifeService.getOrderValue(false, order)));
+			List<OrderDisplay> stats = frozenShelf.stream().map(order-> new OrderDisplay(order, shelfLifeService.getOrderValue(false, order))).collect(toList());
 
-			log.info("Time: {}, Current FROZE SHELF ITEMS : {} ", LocalDateTime.now(), frozenShelf);
+			log.info("[STATS_TIME]: {}, Current FROZE SHELF ITEMS : {} ", LocalDateTime.now(), stats);
 		}
 	}
 	
@@ -313,9 +324,9 @@ public class ShelfDispatcherService implements ShelfConstants {
 
 			sleep();
 			
-			coldShelf.forEach(order-> order.setCurrentShelfLife(shelfLifeService.getOrderValue(true, order)));
+			List<OrderDisplay> stats = anyTemperatureShelf.stream().map(order-> new OrderDisplay(order, shelfLifeService.getOrderValue(false, order))).collect(toList());
 
-			log.info(" Time:{}, Current ANY TEMP SHELF ITEMS : {} ", LocalDateTime.now(), anyTemperatureShelf);
+			log.info(" [STATS_TIME]:{}, Current ANY TEMP SHELF ITEMS : {} ", LocalDateTime.now(), stats);
 		}
 	}
 
@@ -355,7 +366,7 @@ public class ShelfDispatcherService implements ShelfConstants {
 	public  void sleep() {
 		
 		try {
-			TimeUnit.SECONDS.sleep(50);
+			TimeUnit.SECONDS.sleep(5);
 		} catch (InterruptedException e) {
 		}
 	}
